@@ -164,6 +164,7 @@
 
     <a href="#">📊 Attendance</a>
     <a href="{{ url_for('courses') }}">📚 Courses</a>
+    <a href="{{ url_for('results') }}">📊 Results</a>
 
     <a href="{{ url_for('logout') }}">🚪 Logout</a>
 </div>
@@ -196,11 +197,24 @@
         </div>
 
         <!-- FEES -->
-        <div class="card">
-            <h3>Fees Status</h3>
-            <p>Status: <b>Pending</b></p>
-            <button>Pay Fees</button>
-        </div>
+       <!-- FEES -->
+<div class="card">
+    <h3>Fees</h3>
+
+    <a href="{{ url_for('fees') }}">
+        <button style="
+            margin-top:10px;
+            padding:10px;
+            background:#38bdf8;
+            border:none;
+            border-radius:6px;
+            font-weight:bold;
+            cursor:pointer;
+            width:100%;">
+            💰 Pay Fees
+        </button>
+    </a>
+</div>
 
     </div>
 

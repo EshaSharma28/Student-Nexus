@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fee Payment</title>
+    <style>
+        body { background:#0f172a; color:white; font-family:Arial; padding:40px; }
+        .box { background:#1e293b; padding:25px; border-radius:10px; margin-bottom:20px; }
+        select, button, input { padding:10px; margin-top:10px; width:100%; }
+        button { background:#38bdf8; border:none; font-weight:bold; cursor:pointer; }
+        .status { font-weight:bold; margin-top:15px; }
+    </style>
+</head>
+<body>
+
+<h2>💰 Semester Fee Payment</h2>
+
+{% if success %}
+<div style="background:#065f46; padding:10px; border-radius:8px; margin-bottom:15px;">
+    ✅ {{ success }}
+</div>
+{% endif %}
+
+<div class="box">
+    <p><b>Total Fee:</b> ₹{{ total_fee }}</p>
+    <p><b>Amount Paid:</b> ₹{{ amount_paid }}</p>
+    <p><b>Remaining:</b> ₹{{ remaining }}</p>
+    <p class="status">Status: {{ status }}</p>
+</div>
+
+<div class="box">
+    <form method="POST">
+
+        <label>Select Amount</label>
+        <select name="amount" required>
+            <option value="100000">₹1,00,000</option>
+            <option value="200000">₹2,00,000</option>
+            <option value="300000">₹3,00,000</option>
+        </select>
+
+        <label>Payment Method</label>
+        <select id="method" onchange="togglePayment()" required>
+            <option value="upi">UPI</option>
+            <option value="card">Card</option>
+        </select>
+
+        <!-- UPI Section -->
+        <div id="upiSection" style="margin-top:15px;">
+            <p>Scan QR to Pay:</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=UPI-PAYMENT" />
+        </div>
+
+        <!-- Card Section -->
+        <div id="cardSection" style="display:none; margin-top:15px;">
+            <input type="text" placeholder="Card Number" required>
+            <input type="text" placeholder="Expiry Date" required>
+            <input type="text" placeholder="CVV" required>
+        </div>
+
+        <button type="submit"
+        style="
+            margin-top:20px;
+            padding:14px;
+            width:100%;
+            background:linear-gradient(90deg,#38bdf8,#0ea5e9);
+            border:none;
+            border-radius:8px;
+            font-size:16px;
+            font-weight:bold;
+            color:#020617;
+            cursor:pointer;
+            transition:0.3s;">
+    💳 Pay Now
+</button>
+    </form>
+</div>
+
+<script>
+function togglePayment() {
+    var method = document.getElementById("method").value;
+    document.getElementById("upiSection").style.display = method === "upi" ? "block" : "none";
+    document.getElementById("cardSection").style.display = method === "card" ? "block" : "none";
+}
+</script>
+
+<div style="margin-top:30px; text-align:center;">
+    <a href="{{ url_for('dashboard') }}"
+       style="
+            display:inline-block;
+            padding:12px 25px;
+            background:#38bdf8;
+            color:#020617;
+            font-weight:bold;
+            text-decoration:none;
+            border-radius:8px;
+            transition:0.3s;
+       "
+       onmouseover="this.style.background='#0ea5e9'"
+       onmouseout="this.style.background='#38bdf8'">
+        ⬅ Back to Dashboard
+    </a>
+</div>
+
+</body>
+</html>

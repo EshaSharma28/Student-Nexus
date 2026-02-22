@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results</title>
+    <style>
+        body { background:#0f172a; color:white; font-family:Arial; padding:40px; }
+        .box { background:#1e293b; padding:20px; border-radius:10px; }
+        table { width:100%; border-collapse:collapse; margin-top:15px; }
+        th, td { padding:12px; text-align:center; }
+        th { background:#020617; }
+        tr { background:#111827; }
+        tr:nth-child(even) { background:#1f2937; }
+    </style>
+</head>
+<body>
+
+<h2>📊 Academic Results</h2>
+
+<div class="box">
+    {% if results %}
+    <table>
+        <tr>
+            <th>Course Name</th>
+            <th>Credits</th>
+            <th>Credits Earned</th>
+            <th>Grade</th>
+        </tr>
+
+        {% for r in results %}
+        <tr>
+            <td>{{ r[0] }}</td>
+            <td>{{ r[1] }}</td>
+            <td>{{ r[2] if r[2] else 0 }}</td>
+            <td>{{ r[3] if r[3] else "Not Assigned" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+        <p>No results available.</p>
+    {% endif %}
+</div>
+<div style="margin-top:30px; text-align:center;">
+    <a href="{{ url_for('dashboard') }}"
+       style="
+            display:inline-block;
+            padding:12px 25px;
+            background:#38bdf8;
+            color:#020617;
+            font-weight:bold;
+            text-decoration:none;
+            border-radius:8px;
+            transition:0.3s;
+       "
+       onmouseover="this.style.background='#0ea5e9'"
+       onmouseout="this.style.background='#38bdf8'">
+        ⬅ Back to Dashboard
+    </a>
+</div>
+</body>
+</html>

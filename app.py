@@ -14,6 +14,20 @@ from mysql.connector import Error
 app = Flask(__name__)
 app.secret_key = "student_nexus_secret_key"
 
+DUMMY_RESULTS = {
+    1: "A",
+    2: "B+",
+    3: "A+",
+    4: "B",
+    5: "O",
+    6: "A",
+    7: "O",
+    8: "A+",
+    9: "B+",
+    10: "O"
+}
+
+
 
 # MySQL connection
 db = mysql.connector.connect(
@@ -119,12 +133,21 @@ def dashboard():
     result = cursor.fetchone()
     total_credits = result[0] if result and result[0] else 0
 
+    # 🔥 ADD THIS SECTION (Fee Status Logic)
+    cursor.execute("SELECT amount_paid FROM fees WHERE student_email=%s", (email,))
+    fee_result = cursor.fetchone()
+
+    if fee_result and fee_result[0] >= 300000:
+        fee_status = "Fully Paid"
+    else:
+        fee_status = "Pending"
+
     return render_template(
         "dashboard.html",
         name=name,
-        total_credits=total_credits
+        total_credits=total_credits,
+        fee_status=fee_status   # 👈 NEW VARIABLE
     )
-
 @app.route("/logout")
 def logout():
     session.clear()
@@ -289,40 +312,65 @@ def courses():
         return redirect(url_for("login"))
 
     email = session["user_email"]
+    error = None
+    success = None
 
-    # Add course
-    if request.method == "POST":
-        course_id = request.form["course_id"]
-
-        cursor.execute(
-            "INSERT INTO student_courses (student_email, course_id) VALUES (%s, %s)",
-            (email, course_id)
-        )
-        db.commit()
-
-    # Get enrolled courses
+    # Always fetch enrolled first
     cursor.execute("""
-    SELECT c.course_id, c.course_name, c.credits
-    FROM courses c
-    JOIN student_courses sc
-    ON c.course_id = sc.course_id
-    WHERE sc.student_email = %s
-""", (email,))
-
+        SELECT c.course_id, c.course_name, c.credits
+        FROM courses c
+        JOIN student_courses sc
+        ON c.course_id = sc.course_id
+        WHERE sc.student_email = %s
+    """, (email,))
     enrolled = cursor.fetchall()
-    total_credits = sum(c[2] for c in enrolled)
 
+    total_credits = sum(c[2] for c in enrolled)
 
     # Get all available courses
     cursor.execute("SELECT course_id, course_name FROM courses")
     all_courses = cursor.fetchall()
 
+    # Add course
+    if request.method == "POST":
+        course_id = request.form["course_id"]
+
+        # 1️⃣ SUBJECT LIMIT CHECK
+        if len(enrolled) >= 5:
+            error = "You cannot enroll in more than 5 subjects."
+
+        # 2️⃣ DUPLICATE CHECK
+        elif any(str(c[0]) == str(course_id) for c in enrolled):
+            error = "You are already enrolled in this subject."
+
+        else:
+            cursor.execute(
+                "INSERT INTO student_courses (student_email, course_id) VALUES (%s, %s)",
+                (email, course_id)
+            )
+            db.commit()
+            success = "Subject enrolled successfully!"
+
+            # Refresh enrolled after insert
+            cursor.execute("""
+                SELECT c.course_id, c.course_name, c.credits
+                FROM courses c
+                JOIN student_courses sc
+                ON c.course_id = sc.course_id
+                WHERE sc.student_email = %s
+            """, (email,))
+            enrolled = cursor.fetchall()
+            total_credits = sum(c[2] for c in enrolled)
+
     return render_template(
         "courses.html",
+        name=session["user_name"],
         enrolled=enrolled,
-        all_courses=all_courses ,
-    total_credits=total_credits
-)
+        all_courses=all_courses,
+        total_credits=total_credits,
+        error=error,
+        success=success
+    )
     
 @app.route("/courses/remove/<int:course_id>")
 def remove_course(course_id):
@@ -338,6 +386,85 @@ def remove_course(course_id):
     db.commit()
 
     return redirect(url_for("courses"))
+
+@app.route("/fees", methods=["GET", "POST"])
+def fees():
+    if "user_email" not in session:
+        return redirect(url_for("login"))
+
+    email = session["user_email"]
+    total_fee = 300000
+    success = None
+
+    # Check existing record
+    cursor.execute("SELECT amount_paid FROM fees WHERE student_email=%s", (email,))
+    result = cursor.fetchone()
+
+    if result:
+        amount_paid = result[0]
+    else:
+        cursor.execute("INSERT INTO fees (student_email) VALUES (%s)", (email,))
+        db.commit()
+        amount_paid = 0
+
+    if request.method == "POST":
+        pay_amount = int(request.form["amount"])
+
+        amount_paid += pay_amount
+
+        cursor.execute(
+            "UPDATE fees SET amount_paid=%s WHERE student_email=%s",
+            (amount_paid, email)
+        )
+        db.commit()
+
+        success = "Payment Successful!"
+
+    status = "Fully Paid" if amount_paid >= total_fee else "Pending"
+
+    return render_template(
+        "fees.html",
+        total_fee=total_fee,
+        amount_paid=amount_paid,
+        remaining=total_fee - amount_paid,
+        status=status,
+        success=success
+    )
+
+@app.route("/results")
+def results():
+    if "user_email" not in session:
+        return redirect(url_for("login"))
+
+    email = session["user_email"]
+
+    cursor.execute("""
+        SELECT c.course_id, c.course_name, c.credits
+        FROM courses c
+        JOIN student_courses sc
+        ON c.course_id = sc.course_id
+        WHERE sc.student_email = %s
+    """, (email,))
+
+    enrolled_courses = cursor.fetchall()
+
+    results = []
+
+    for course in enrolled_courses:
+        course_id = course[0]
+        course_name = course[1]
+        credits = course[2]
+
+        grade = DUMMY_RESULTS.get(course_id, "B")
+        credits_earned = credits  # always full credits
+
+        results.append((course_name, credits, credits_earned, grade))
+
+    return render_template(
+        "results.html",
+        name=session["user_name"],
+        results=results
+    )
 
 
 

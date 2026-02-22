@@ -138,10 +138,27 @@
 </div>
     {% endif %}
 
-    <a href="{{ url_for('dashboard') }}" class="back-link">
+    
+</div>
+
+<div style="margin-top:30px; text-align:center;">
+    <a href="{{ url_for('dashboard') }}"
+       style="
+            display:inline-block;
+            padding:12px 25px;
+            background:#38bdf8;
+            color:#020617;
+            font-weight:bold;
+            text-decoration:none;
+            border-radius:8px;
+            transition:0.3s;
+       "
+       onmouseover="this.style.background='#0ea5e9'"
+       onmouseout="this.style.background='#38bdf8'">
         ⬅ Back to Dashboard
     </a>
 </div>
+
 
 </body>
 </html>
